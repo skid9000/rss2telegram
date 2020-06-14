@@ -1,0 +1,6 @@
+# You can get your bot token from @BotFather.
+Token = ""
+# You can get your chatid from @myidbot, invite him on your channel/group and use the command "/getgroupid@myidbot".
+chatid = ""
+# This is the delay between each poll to the RSS feeds in seconds.
+delay = 30
