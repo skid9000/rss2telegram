@@ -137,7 +137,7 @@ def init_sqlite():
 
 
 def main():
-    updater = Updater(token=config.Token)
+    updater = Updater(token=config.Token, use_context=True)
     job_queue = updater.job_queue
     dp = updater.dispatcher
 
