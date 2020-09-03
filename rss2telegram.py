@@ -54,54 +54,54 @@ def rss_load():
         rss_dict[row[0]] = (row[1], row[2])
 
 
-def cmd_rss_list(bot, update):
+def cmd_rss_list(update, context):
     if bool(rss_dict) is False:
-        update.message.reply_text("The database is empty")
+        update.effective_message.reply_text("The database is empty")
     else:
         for title, url_list in rss_dict.items():
-            update.message.reply_text(
+            update.effective_message.reply_text(
                 "Title: " + title +
                 "\nRSS url: " + url_list[0] +
                 "\nLast checked article: " + url_list[1])
 
 
-def cmd_rss_add(bot, update, args):
+def cmd_rss_add(update, context):
     # try if there are 2 arguments passed
     try:
-        args[1]
+        context.args[1]
     except IndexError:
-        update.message.reply_text("ERROR: The format needs to be: /add <title> <link>")
+        update.effective_message.reply_text("ERROR: The format needs to be: /add <title> <link>")
         raise
     # try if the url is a valid RSS feed
     try:
-        rss_d = feedparser.parse(args[1])
+        rss_d = feedparser.parse(context.args[1])
         rss_d.entries[0]['title']
     except IndexError:
-        update.message.reply_text(
+        update.effective_message.reply_text(
             "ERROR: The link does not seem to be a RSS feed or is not supported")
         raise
-    sqlite_write(args[0], args[1], str(rss_d.entries[0]['link']))
+    sqlite_write(context.args[0], context.args[1], str(rss_d.entries[0]['link']))
     rss_load()
-    update.message.reply_text("Added \nTITLE: %s\nRSS: %s" % (args[0], args[1]))
-    print("Added \nTITLE: %s\nRSS: %s" % (args[0], args[1]))
+    update.effective_message.reply_text("Added \nTITLE: %s\nRSS: %s" % (args[0], args[1]))
+    print("Added \nTITLE: %s\nRSS: %s" % (context.args[0], context.args[1]))
 
 
 def cmd_rss_remove(bot, update, args):
     conn = sqlite3.connect('rss.db')
     c = conn.cursor()
     try:
-        c.execute("DELETE FROM rss WHERE name = ?", args[0])
+        c.execute("DELETE FROM rss WHERE name = ?", context.args[0])
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
-        print('Error %s:' % e.args[0])
+        print('Error %s:' % e.context.args[0])
     rss_load()
-    update.message.reply_text("Removed: " + args[0])
-    print("Removed: " + args[0])
+    update.effective_message.reply_text("Removed: " + context.args[0])
+    print("Removed: " + context.args[0])
 
 
-def cmd_help(bot, update):
-    update.message.reply_text(
+def cmd_help(update, context):
+    update.effective_message.reply_text(
         "RSS to Telegram bot" +
         "\n\nAfter successfully adding a RSS link, the bot starts fetching the feed every "
          + str(config.delay) + " seconds. (This can be set in config.py) ⏰⏰⏰" +
@@ -113,7 +113,7 @@ def cmd_help(bot, update):
         "\n/list Lists all the titles and the RSS feeds links from the DB.")
 
 
-def rss_monitor(bot, job):
+def rss_monitor(context):
     for name, url_list in rss_dict.items():
         rss_d = feedparser.parse(url_list[0])
         if (url_list[1] != rss_d.entries[0]['link']):
@@ -126,7 +126,7 @@ def rss_monitor(bot, job):
             conn.close()
             rss_load()
             print("Sending RSS update to Telegram...")
-            bot.send_message(chat_id=config.chatid, text=rss_d.entries[0]['link'])
+            context.bot.send_message(config.chatid, rss_d.entries[0]['link'])
             print("Success.")
 
 
@@ -141,11 +141,11 @@ def main():
     job_queue = updater.job_queue
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("add", cmd_rss_add, pass_args=True))
+    dp.add_handler(CommandHandler("add", cmd_rss_add))
     dp.add_handler(CommandHandler("help", cmd_help))
     dp.add_handler(CommandHandler("start", cmd_help))
     dp.add_handler(CommandHandler("list", cmd_rss_list))
-    dp.add_handler(CommandHandler("remove", cmd_rss_remove, pass_args=True))
+    dp.add_handler(CommandHandler("remove", cmd_rss_remove))
 
 
     db = Path("./rss.db")

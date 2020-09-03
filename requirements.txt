@@ -1,2 +1,2 @@
 feedparser
-python-telegram-bot==v11.1.0
+python-telegram-bot
